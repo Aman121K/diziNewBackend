@@ -39,6 +39,14 @@ authRoute.post(
 )
 
 authRoute.post(
+    '/salon-signup',
+    [
+        check('email').isEmail().withMessage('Please provide a valid E-Mail!')
+    ],
+    globalController.salonSignUp
+)
+
+authRoute.post(
     '/login',
     [
         check('phone')

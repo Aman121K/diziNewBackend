@@ -408,6 +408,87 @@ class GlobalController{
         }
     
         const allowedRole = Object.values(types.userType);
+
+        if(req.body.signupFor = 1) {
+            role = types.userType.user
+        } else {
+            role = types.userType.barber
+        }
+    
+        const { role = role, 
+            fullname,
+            countryCode,
+            phone,
+            email,
+            dob,
+            gender,
+            pin,
+            address,
+            state,
+            country,
+            zipcode,
+            fcmToken, otp } = req.body;
+
+        // const otp = "1234";
+
+        try {    
+            // checking that no invalid user role is passed by client
+            if(allowedRole.indexOf(role) === -1 ){
+                return res.status(BAD_REQUEST).json({
+                    status: UNAUTHORIZED,
+                    error: "Invalid user role type"
+                });
+            }
+    
+    
+            const user = await User.findOne({ "$or": [{ email: email }, { phone: phone }] });
+            if(user && user.account_status === types.userStatus.active){
+                return res.status(BAD_REQUEST).json({
+                    status: BAD_REQUEST,
+                    error: "Email or Phone Number already registered."
+                });
+            } else {
+                if (otp === "1234") {
+                    const data = await User.findOne({}).sort({ createdAt: -1 });
+                    await createAndSaveNewUser(data, req, res);
+                } else {
+                    var otpGen = Math.floor(Math.random() * 10000).toString();
+                    while(otpGen.length < 4){
+                        otpGen += "0";
+                    }
+                    const verification_check = await twilio.verify.v2.services(twilioServiceSID)
+                    .verificationChecks
+                    .create({ to: `+${req.body.countryCode}${req.body.phone}`, code: otpGen });
+
+                    if (verification_check.status === "approved") {
+                        const data = await User.findOne({}).sort({ createdAt: -1 });
+                        await createAndSaveNewUser(data, req, res);
+                    } else {
+                        return res.status(BAD_REQUEST).json({
+                            status: BAD_REQUEST,
+                            error: "Entered OTP is Invalid."
+                        });
+                    }
+                }
+            }
+    
+        } catch (err) {
+            res.status(INTERNAL_SERVER_ERROR).json(err);
+        } finally {
+            loggerUtil(`Sign up API called by user - ${req.body.email}`)
+        }
+    }
+
+    async salonSignUp(req, res){
+        const errors = validationResult(req) || []
+        if (!errors.isEmpty()) {
+            return res.status(WRONG_ENTITY).json({
+                status: WRONG_ENTITY,
+                error: errors.array()[0]?.msg
+            })
+        }
+    
+        const allowedRole = Object.values(types.userType);
     
         const { role = types.userType.user, 
             fullname,
