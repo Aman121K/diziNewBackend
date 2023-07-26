@@ -63,8 +63,6 @@ const sendMail = async (email, subject, otpGen) => {
 }
 
 const createAndSaveNewUser = async (data, req, res) => {
-    // const salt = bcrypt.genSaltSync(10);
-    // const hashPass = bcrypt.hashSync(req.body.pin, salt);
 
     const newUser = new User({
         userId: data?.userId ? data.userId + 1 : 1,
@@ -81,6 +79,46 @@ const createAndSaveNewUser = async (data, req, res) => {
         zipcode: req.body.zipcode,
         gender: req.body.gender,
         dob: req.body.dob,
+        account_status:types.userStatus.active
+    });
+
+    try {
+        const user = await newUser.save();
+
+        const token = Token.getBrowserUsableToken(req,user._id);
+                
+        res.cookie('Token', token, {
+            expires: new Date(Date.now() + 900000),
+            httpOnly: true
+        })
+
+        user.save();
+        // addNotification(user._id, "You have successfully signed up.");
+        return res.status(OK).json({
+            status: OK,
+            message: "User Registered Successfully.",
+            data: user,
+            token: token
+        });
+    } catch (err) {
+        return res.status(BAD_REQUEST).json({
+            status: BAD_REQUEST,
+            message: err.message
+        });
+    }
+};
+
+const createAndSaveNewSalon = async (data, req, res) => {
+
+    const newUser = new User({
+        userId: data?.userId ? data.userId + 1 : 1,
+        role: types.userType.salon,
+        salonName:req.body.salonName,
+        salonOwnerName:req.body.salonOwnerName,
+        countryCode: req.body.countryCode,
+        phone: req.body.phone,
+        email: req.body.email,
+        fcmToken: req.body.fcmToken,
         account_status:types.userStatus.active
     });
 
@@ -231,16 +269,18 @@ class GlobalController{
             const salt = bcrypt.genSaltSync(saltRounds);
             const hashMpin = bcrypt.hashSync(pinString, salt);
 
-            // const salt = bcrypt.genSaltSync(5);
-            // const hashMpin = bcrypt.hashSync(pin,salt);
-
             const usr = await User.findOneAndUpdate({_id:req.user.id},{$set:{mpin:hashMpin}},{new:true});
 
             if(usr){
 
                 const newusr = usr.toObject();
 
-                return res.status(OK).json(newusr);
+                return res.status(OK).json({
+                    status: OK,
+                    message: "Mpin saved Successfully.",
+                    data: newusr
+                });
+
             }
             else{
                 return res.status(BAD_REQUEST).json(`No user found`);
@@ -409,27 +449,14 @@ class GlobalController{
     
         const allowedRole = Object.values(types.userType);
 
-        if(req.body.signupFor = 1) {
-            role = types.userType.user
-        } else {
-            role = types.userType.barber
+        if(req.body.signupFor == "user") {
+            var userRole = types.userType.user
+        } else if (req.body.signupFor == "salon") {
+            var userRole = types.userType.salon
         }
-    
-        const { role = role, 
-            fullname,
-            countryCode,
-            phone,
-            email,
-            dob,
-            gender,
-            pin,
-            address,
-            state,
-            country,
-            zipcode,
-            fcmToken, otp } = req.body;
 
-        // const otp = "1234";
+        const { email, phone, otp, role = userRole } = req.body;
+
 
         try {    
             // checking that no invalid user role is passed by client
@@ -450,7 +477,12 @@ class GlobalController{
             } else {
                 if (otp === "1234") {
                     const data = await User.findOne({}).sort({ createdAt: -1 });
-                    await createAndSaveNewUser(data, req, res);
+                    if(req.body.signupFor == "user"){
+                        await createAndSaveNewUser(data, req, res);
+                    } else if (req.body.signupFor == "salon") {
+                        await createAndSaveNewSalon(data, req, res);
+                    }
+                    
                 } else {
                     var otpGen = Math.floor(Math.random() * 10000).toString();
                     while(otpGen.length < 4){

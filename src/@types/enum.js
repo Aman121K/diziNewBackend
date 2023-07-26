@@ -1,6 +1,6 @@
 module.exports.userType = {
 	user: 1,
-	barber: 2,
+	salon: 2,
 	admin: 3
 }
 

@@ -46,7 +46,7 @@ module.exports = (req,res,next)=>{
                         })
                     }
 
-                    if(user.role != types.userType.user ){
+                    if(user.role != types.userType.user && user.role != types.userType.salon){
                         return res.status(FORBIDDEN).json({
                             error: 'Not an user!',
                             status: 0
