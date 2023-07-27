@@ -299,7 +299,7 @@ class GlobalController{
         try {
       
             User.findOne({_id:req.user.id},
-                    { salt: 0, encrypted_password: 0, __v: 0, profilePhoto: 0 }
+                    { salt: 0, mpin: 0, __v: 0, profilePhoto: 0 }
                 )
                 .exec((err, user) => {
                     if (err || !user) {

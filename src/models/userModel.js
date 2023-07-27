@@ -26,12 +26,6 @@ const userSchema = new mongoose.Schema({
     location: { type: String, trim: true, },
     pic: { type: String, trim: true },
     fcmToken: { type: String, trim: true },
-    salonName: { type: String, trim: true, },
-    salonOwnerName: { type: String, trim: true, },
-    accessoryInfo : { type: Object },
-    salonLogo: { type: String, trim: true },
-    addressProof: { type: String, trim: true },
-    salonType: { type: String },
     lastActive:{type:Date, default: () => Date.now() }
 }, { timestamps: true })
 
