@@ -13,21 +13,28 @@ class BarberController{
 
    async add(req,res){
     try {
+        if (req.user.role !== 2) {
+          return res.status(403).json({
+            status: 403,
+            message: "Only salon owners are allowed to add barbers.",
+          });
+        }
+    
         const salonId = req.user.id;
         const barber = new Barber({
-        ...req.body,
-        salon: salonId,
+          ...req.body,
+          salon: salonId,
         });
+    
         const savedBarber = await barber.save();
-        // res.status(OK).json(savedBarber);
-        return res.status(OK).json({
-            status: OK,
-            message: "Barber added Successfully.",
-            data: savedBarber
+        return res.status(201).json({
+          status: "OK",
+          message: "Barber added successfully.",
+          data: savedBarber,
         });
       } catch (err) {
         console.error("Error adding a barber:", err);
-        res.status(500).json({ error: "Server error" });
+        return res.status(500).json({ error: "Server error" });
       }
    }
 
