@@ -3,6 +3,7 @@ const userRoute = require("./user");
 const express = require('express');
 const globalRoute = require("./global");
 const barberRoute = require("./barber")
+const salonRoute = require("./salon");
 
 const routes = (app) => {
     // Test Route for API
@@ -14,12 +15,17 @@ const routes = (app) => {
     app.use( '/api/v1',[
         express.urlencoded({ extended: true, limit:"200mb" }),
         express.json({ limit:"200mb", extended:true })],
-        globalRoute )
+        globalRoute)
 
     app.use('/api/v1/user',[
         express.urlencoded({ extended: true, limit:"200mb" }),
         express.json({ limit:"200mb", extended:true })],
-        userRoute )
+        userRoute)
+
+        app.use('/api/v1/salon',[
+            express.urlencoded({ extended: true, limit:"200mb" }),
+            express.json({ limit:"200mb", extended:true })],
+            salonRoute)
 
         app.use('/api/v1/barber',[
             express.urlencoded({ extended: true, limit:"200mb" }),

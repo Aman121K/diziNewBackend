@@ -6,20 +6,26 @@ const app = express();
 const routes = require("./routes/index")
 const fileupload = require("express-fileupload");
 const fs = require('fs');
-
-
+const bodyParser = require("body-parser");
+const path=require("path")
 const buc = require("./utils/Bucket");
 const isAuth = require("./middleware/isAuth");
 
 app.use(cors());
 
-app.use(express.static('./public'))
+// app.use(express.static('./public'))
+
+// app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(bodyParser.json());
+app.use('/uploads',express.static(path.join(__dirname,'uploads')))
 
 
 // app.use(express.urlencoded({ extended: true, limit:"200mb" }))
 // app.use(express.raw({type: '*/*'}))
 // app.use(express.json({ limit:"200mb", extended:true }))
-app.use(fileupload())
+// app.use(fileupload())
 
 // Routes for the app
 routes(app);

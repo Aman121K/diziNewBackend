@@ -4,14 +4,26 @@ const { check, body } = require('express-validator')
 
 const authRoute = express.Router();
 const globalController = require("../controllers/GlobalController");
+const isUser = require('../middleware/isUser');
 
-authRoute.post(
-    '/check',
-    [
-        check('email').isEmail().withMessage('Please provide a valid E-Mail!'),
-    ],
-    globalController.checkEMail
-)
+const multer = require("multer");
+const { memoryStorage } = require("multer");
+const path = require("path");
+const crypto = require("crypto");
+
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, "src/uploads/banners");
+    },
+    filename: (req, file, cb) => {
+      const randomString = crypto.randomBytes(8).toString("hex");
+      const fileExtension = path.extname(file.originalname);
+      const uniqueFilename = randomString + fileExtension;
+      cb(null, uniqueFilename);
+    },
+  });
+  const upload = multer({ storage });
 
 authRoute.post(
     '/sendOtp',
@@ -39,14 +51,6 @@ authRoute.post(
 )
 
 authRoute.post(
-    '/salon-signup',
-    [
-        check('email').isEmail().withMessage('Please provide a valid E-Mail!')
-    ],
-    globalController.salonSignUp
-)
-
-authRoute.post(
     '/login',
     [
         check('phone')
@@ -59,34 +63,26 @@ authRoute.post(
     globalController.login
 )
 
-authRoute.post(
-    '/checkUsername',
-    [
-        check('username').isLength({ min: 4 }).withMessage('Please provide a valid Username.'),
-    ],
-    globalController.checkUsername
-)
 
-// authRoute.post(
-//     '/setMpin',
-//     [
-//         check('pin').isLength({ min: 4 }).withMessage('Pin length should be minimum of 4 Digits')
-//     ],
-//     globalController.setMpin
-// )
+authRoute.post('/sociallogin',[
+    check('socialId')
+        .isLength({
+            min: 3
+        })
+        .withMessage('Please provide social id'),
+] ,globalController.socialLogin);
 
-// authRoute.post('/sociallogin',[
-//     check('socialId')
-//         .isLength({
-//             min: 3
-//         })
-//         .withMessage('Please provide social id'),
-// ] ,globalController.socialLogin);
+authRoute.post('/forgetpassword', globalController.forgetPassword);
 
-// authRoute.post('/forgetpassword', globalController.forgetPassword);
-
-// authRoute.post('/resetpassword',globalController.resetPassword);
+authRoute.post('/resetpassword',globalController.resetPassword);
 
 authRoute.get('/signout', globalController.signout)
+
+authRoute.route('/addBanner')
+.post(isUser,
+    upload.fields([
+      { name: "link", maxCount: 1 },
+    ]),
+    (req, res) => globalController.addBanner (req, res))
 
 module.exports = authRoute

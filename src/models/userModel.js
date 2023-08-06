@@ -1,15 +1,33 @@
 const mongoose = require("mongoose")
 
+const accessoryInfoSchema = new mongoose.Schema({
+    AC: { type: Boolean },
+    Sofa: { type: Boolean },
+    TV: { type: Boolean },
+    Newspaper: { type: Boolean },
+    wifi: { type: Boolean },
+    magazine: { type: Boolean },
+}, { _id: false });
+
+// const salonServicesSchema = new mongoose.Schema({
+//     dob: { type: String, trim: true },
+//     gender: { type: String, trim: true },
+//     occupation: { type: String, trim: true },
+//     interest: { type: String, trim: true },
+//     language: { type: String, trim: true },
+// }, { _id: false });
+
 const userSchema = new mongoose.Schema({
     socialId: { type: String },
     role: { type: Number, required: [true, "Please add User - Type"] },
     fullname: { type: String, trim: true, },
     salonName: { type: String, trim: true, },
     salonOwnerName: { type: String, trim: true, },
-    accessoryInfo : { type: Object },
-    salonLogo: { type: String, trim: true },
-    addressProof: { type: String, trim: true },
+    accessoryInfo : accessoryInfoSchema,
+    salonLogo: { type: String },
+    addressProof: { type: String },
     salonType: { type: String },
+    // salonServices: salonServicesSchema,
     countryCode: { type: String, trim: true },
     phone: { type: String },
     email: { type: String, unique: [true, "Email already registered."], trim: true, },

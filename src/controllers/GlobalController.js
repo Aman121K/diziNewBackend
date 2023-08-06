@@ -6,6 +6,7 @@ const cnf = require("dotenv").config;
 cnf();
 
 const User = require("../models/userModel")
+const Banner = require("../models/bannerModel")
 const { loggerUtil } = require("../utils/logger")
 
 const buc = require("../utils/Bucket");
@@ -150,7 +151,7 @@ const createAndSaveNewSalon = async (data, req, res) => {
 
 class GlobalController{
 
-    async checkEMail(req, res){
+    async addBanner(req, res){
         const errors = validationResult(req) || []
         if (!errors.isEmpty()) {
             return res.status(WRONG_ENTITY).json({
@@ -158,33 +159,29 @@ class GlobalController{
                 error: errors.array()[0]?.msg
             })
         }
+        const { description } = req.body
+        let link;
+        if (req.files && req.files.link && req.files.link.length > 0) {
+            link = req.files.link[0].filename;
+        }
+        const newBanner= new Banner({
+            description: description,
+            link: link,
+        });
     
-        // extracting values from usertypes object
-        const allowedRole = Object.values(types.userType);
-    
-        const { email } = req.body;
-
         try {
-
-            const user = await User.findOne({email:email});
-            if(user){
-
-                return res.status(BAD_REQUEST).json({
-                    status: BAD_REQUEST,
-                    error: "Email already registered."
-                });
-            }
-            else {
-                return res.status(OK).json({
-                    status: OK,
-                    message: "true",
-                })
-            }
-    
-        } catch (err) {
-            res.status(INTERNAL_SERVER_ERROR).json(err);
-        } finally {
-            loggerUtil(`Sign up API called by user - ${req.body.email}`)
+            const banner = await newBanner.save();
+            res.status(OK).json({
+                status: OK,
+                message: "Successfully added banner.",
+                data: banner
+            })
+        }
+        catch (err) {
+            loggerUtil(err)
+        }
+        finally {
+            loggerUtil("OTP API Called")
         }
     }
 
@@ -217,44 +214,6 @@ class GlobalController{
         }
         finally {
             loggerUtil("OTP API Called")
-        }
-    }
-
-    async checkUsername(req, res){
-        const errors = validationResult(req) || []
-        if (!errors.isEmpty()) {
-            return res.status(WRONG_ENTITY).json({
-                status: WRONG_ENTITY,
-                error: errors.array()[0]?.msg
-            })
-        }
-    
-        // extracting values from usertypes object
-        const allowedRole = Object.values(types.userType);
-    
-        const { username } = req.body;
-
-        try {
-
-            const user = await User.findOne({username:username});
-            if(user){
-
-                return res.status(BAD_REQUEST).json({
-                    status: BAD_REQUEST,
-                    error: "Username already registered."
-                });
-            }
-            else {
-                return res.status(OK).json({
-                    status: OK,
-                    message: "true",
-                })
-            }
-    
-        } catch (err) {
-            res.status(INTERNAL_SERVER_ERROR).json(err);
-        } finally {
-            loggerUtil(`Sign up API called by user - ${req.body.email}`)
         }
     }
 
@@ -299,7 +258,19 @@ class GlobalController{
         try {
       
             User.findOne({_id:req.user.id},
-                    { salt: 0, mpin: 0, __v: 0, profilePhoto: 0 }
+                    { 
+                        salt: 0, 
+                        mpin: 0, 
+                        __v: 0, 
+                        profilePhoto: 0,
+                        salonName: 0, 
+                        salonOwnerName: 0, 
+                        accessoryInfo: 0, 
+                        salonLogo: 0, 
+                        addressProof: 0, 
+                        salonType: 0, 
+                        salonServices: 0
+                    }
                 )
                 .exec((err, user) => {
                     if (err || !user) {
@@ -313,6 +284,44 @@ class GlobalController{
                     res.status(OK).json({
                         status: OK,
                         message: 'User Fetched Successfully!',
+                        data: usr
+                    })
+                })
+        } catch (err) {
+            loggerUtil(err, 'ERROR')
+        } finally {
+            loggerUtil('GetUserDetails Function is Executed!')
+        }
+    }
+
+    async getSalonDetails(req,res){
+
+        try {
+      
+            User.findOne({_id:req.user.id},
+                    { 
+                        salt: 0, 
+                        mpin: 0, 
+                        __v: 0, 
+                        profilePhoto: 0,
+                        fullname: 0, 
+                        dob: 0, 
+                        gender: 0, 
+                        v_password: 0
+                    }
+                )
+                .exec((err, user) => {
+                    if (err || !user) {
+                        return res.status(NOT_FOUND).json({
+                            error: 'No salon was found in DB!'
+                        })
+                    }
+                    var usr = user.toObject();
+                    delete usr['encrypted_password'];
+
+                    res.status(OK).json({
+                        status: OK,
+                        message: 'Salon Fetched Successfully!',
                         data: usr
                     })
                 })
@@ -354,7 +363,74 @@ class GlobalController{
 
     }
 
+    async updateSalonDetails(req,res){
+        try {
+            const {
+                salonName,
+                accessoryInfo,
+                salonLogo,
+                addressProof,
+                salonType,
+                // phone,
+                address,
+                state,
+                country,
+                zipcode
+            } = req.body;
+        
+            // Create an object with the fields to update
+            const updatedInfo = {
+                salonName,
+                accessoryInfo,
+                salonLogo,
+                addressProof,
+                salonType,
+                // phone,
+                address,
+                state,
+                country,
+                zipcode
+            };
+
+            updatedInfo.accessoryInfo = JSON.parse(accessoryInfo);
+
+            if (req.files && req.files.salonLogo && req.files.salonLogo.length > 0) {
+                updatedInfo.salonLogo = req.files.salonLogo[0].filename;
+            }
+
+            if (req.files && req.files.addressProof && req.files.addressProof.length > 0) {
+                updatedInfo.addressProof = req.files.addressProof[0].filename;
+            }
+        
+            const user = await User.findByIdAndUpdate(
+                req.user.id,
+                updatedInfo,
+                { new: true }
+            );
+        
+            if (!user) {
+              return res.status(404).json({ message: "User not found." });
+            }
+        
+            res.status(OK).json({
+                status: OK,
+                message: "Salon kyc data successfully updated.",
+                data: user
+            })
+          } catch (error) {
+            return res.status(BAD_REQUEST).json({ status: BAD_REQUEST,message: "Server error" });
+          }
+    
+    }
+
     async deleteUser(req,res){
+
+        const user = await User.findOneAndUpdate({_id:req.user.id},{$set:{account_status:types.userStatus.deleted}});
+        res.clearCookie('Token');
+        res.status(OK).json("user deleted successfully");
+    }
+
+    async deleteSalon(req,res){
 
         const user = await User.findOneAndUpdate({_id:req.user.id},{$set:{account_status:types.userStatus.deleted}});
         res.clearCookie('Token');
@@ -511,81 +587,6 @@ class GlobalController{
         }
     }
 
-    async salonSignUp(req, res){
-        const errors = validationResult(req) || []
-        if (!errors.isEmpty()) {
-            return res.status(WRONG_ENTITY).json({
-                status: WRONG_ENTITY,
-                error: errors.array()[0]?.msg
-            })
-        }
-    
-        const allowedRole = Object.values(types.userType);
-    
-        const { role = types.userType.user, 
-            fullname,
-            countryCode,
-            phone,
-            email,
-            dob,
-            gender,
-            pin,
-            address,
-            state,
-            country,
-            zipcode,
-            fcmToken, otp } = req.body;
-
-        // const otp = "1234";
-
-        try {    
-            // checking that no invalid user role is passed by client
-            if(allowedRole.indexOf(role) === -1 ){
-                return res.status(BAD_REQUEST).json({
-                    status: UNAUTHORIZED,
-                    error: "Invalid user role type"
-                });
-            }
-    
-    
-            const user = await User.findOne({ "$or": [{ email: email }, { phone: phone }] });
-            if(user && user.account_status === types.userStatus.active){
-                return res.status(BAD_REQUEST).json({
-                    status: BAD_REQUEST,
-                    error: "Email or Phone Number already registered."
-                });
-            } else {
-                if (otp === "1234") {
-                    const data = await User.findOne({}).sort({ createdAt: -1 });
-                    await createAndSaveNewUser(data, req, res);
-                } else {
-                    var otpGen = Math.floor(Math.random() * 10000).toString();
-                    while(otpGen.length < 4){
-                        otpGen += "0";
-                    }
-                    const verification_check = await twilio.verify.v2.services(twilioServiceSID)
-                    .verificationChecks
-                    .create({ to: `+${req.body.countryCode}${req.body.phone}`, code: otpGen });
-
-                    if (verification_check.status === "approved") {
-                        const data = await User.findOne({}).sort({ createdAt: -1 });
-                        await createAndSaveNewUser(data, req, res);
-                    } else {
-                        return res.status(BAD_REQUEST).json({
-                            status: BAD_REQUEST,
-                            error: "Entered OTP is Invalid."
-                        });
-                    }
-                }
-            }
-    
-        } catch (err) {
-            res.status(INTERNAL_SERVER_ERROR).json(err);
-        } finally {
-            loggerUtil(`Sign up API called by user - ${req.body.email}`)
-        }
-    }
-
     async login(req, res){
         const errors = validationResult(req) || []
     
@@ -670,212 +671,212 @@ class GlobalController{
         })
     }
 
-    // async socialLogin(req,res){
+    async socialLogin(req,res){
 
-    //     const errors = validationResult(req) || []
-    // if (!errors.isEmpty()) {
-    //     return res.status(WRONG_ENTITY).json({
-    //         status: WRONG_ENTITY,
-    //         error: errors.array()[0]?.msg
-    //     })
-    // }
-    // const { socialId, email, firstname, lastname, picture } = req.body
-    // console.log(socialId);
-    // try {
-    //     User.findOne({ socialId: socialId },{encrypted_password:false}).then(user => {
-    //         if (user) {
+        const errors = validationResult(req) || []
+    if (!errors.isEmpty()) {
+        return res.status(WRONG_ENTITY).json({
+            status: WRONG_ENTITY,
+            error: errors.array()[0]?.msg
+        })
+    }
+    const { socialId, email, firstname, lastname, picture } = req.body
+    console.log(socialId);
+    try {
+        User.findOne({ socialId: socialId },{encrypted_password:false}).then(user => {
+            if (user) {
 
-    //             const token = Token.getBrowserUsableToken(req,user._id);
+                const token = Token.getBrowserUsableToken(req,user._id);
                
-    //             res.cookie('Token', token, {
-    //                 expires: new Date(Date.now() + 900000),
-    //                 httpOnly: true
-    //             })
+                res.cookie('Token', token, {
+                    expires: new Date(Date.now() + 900000),
+                    httpOnly: true
+                })
 
-    //             res.status(OK).json({
-    //                 status: OK,
-    //                 message: 'User Fetched Successfully!',
-    //                 token,
-    //                 data: user
-    //             })
+                res.status(OK).json({
+                    status: OK,
+                    message: 'User Fetched Successfully!',
+                    token,
+                    data: user
+                })
 
           
-    //         } else {
-    //             User.findOne({ email: email }).then(user => {
-    //                 if (user) {
-    //                     return res.status(BAD_REQUEST).json({
-    //                         status: BAD_REQUEST,
-    //                         error: "Email or Phone Number already registered."
-    //                     });
-    //                 } else {
+            } else {
+                User.findOne({ email: email }).then(user => {
+                    if (user) {
+                        return res.status(BAD_REQUEST).json({
+                            status: BAD_REQUEST,
+                            error: "Email or Phone Number already registered."
+                        });
+                    } else {
 
-    //                     const newUser = new User({
-    //                         role: types.userType.user,
-    //                         firstname: firstname,
-    //                         lastname: lastname,
-    //                         socialId: socialId,
-    //                         email: email,
-    //                         account_status:types.userStatus.active
-    //                     });
-    //                     newUser
-    //                         .save()
-    //                         .then(user => {
-    //                             // addNotification(user._id, "You have successfully signed up.")
-    //                             const token = Token.getBrowserUsableToken(req,user._id);
+                        const newUser = new User({
+                            role: types.userType.user,
+                            firstname: firstname,
+                            lastname: lastname,
+                            socialId: socialId,
+                            email: email,
+                            account_status:types.userStatus.active
+                        });
+                        newUser
+                            .save()
+                            .then(user => {
+                                // addNotification(user._id, "You have successfully signed up.")
+                                const token = Token.getBrowserUsableToken(req,user._id);
                
-    //                             res.cookie('Token', token, {
-    //                                 expires: new Date(Date.now() + 900000),
-    //                                 httpOnly: true
-    //                             })
-    //                             res.status(OK).json({
-    //                                 status: OK,
-    //                                 message: "User Registered Successfully.",
-    //                                 token,
-    //                                 data: user
-    //                             })
-    //                         })
-    //                         .catch(err => res.status(BAD_REQUEST).json({
-    //                             status: BAD_REQUEST,
-    //                             message: err.message
-    //                         }));
+                                res.cookie('Token', token, {
+                                    expires: new Date(Date.now() + 900000),
+                                    httpOnly: true
+                                })
+                                res.status(OK).json({
+                                    status: OK,
+                                    message: "User Registered Successfully.",
+                                    token,
+                                    data: user
+                                })
+                            })
+                            .catch(err => res.status(BAD_REQUEST).json({
+                                status: BAD_REQUEST,
+                                message: err.message
+                            }));
             
-    //             }
-    //         })
-    //         }
-    //     }).catch((err) => {
-    //         return res.status(INTERNAL_SERVER_ERROR).json({
-    //             status: INTERNAL_SERVER_ERROR,
-    //             error: err
-    //         })
-    //     })
-    // } catch (err) {
-    //     loggerUtil(err, 'ERROR')
-    // } finally {
-    //     loggerUtil(`Social Login API Called.`)
-    // }
+                }
+            })
+            }
+        }).catch((err) => {
+            return res.status(INTERNAL_SERVER_ERROR).json({
+                status: INTERNAL_SERVER_ERROR,
+                error: err
+            })
+        })
+    } catch (err) {
+        loggerUtil(err, 'ERROR')
+    } finally {
+        loggerUtil(`Social Login API Called.`)
+    }
 
-    // }
+    }
 
-    // async forgetPassword(req,res){
+    async forgetPassword(req,res){
 
-    //     const { email } = req.body;
+        const { email } = req.body;
 
-    //    try{
-    //     const user = await User.findOne({email:email});
-    //     if(!user){
-    //         return res.status(NOT_FOUND).json({
-    //             status : NOT_FOUND,
-    //             message : "No user found with the email"
-    //         });
-    //     }
+       try{
+        const user = await User.findOne({email:email});
+        if(!user){
+            return res.status(NOT_FOUND).json({
+                status : NOT_FOUND,
+                message : "No user found with the email"
+            });
+        }
 
-    //     const myotp = await FPotp.findOne({uid:user._id});
-    //     if(myotp){
-    //         return res.status(OK).json({
-    //             status: OK,
-    //             message: "OTP Verification",
-    //             refData: user._id
-    //         })
-    //     }
+        const myotp = await FPotp.findOne({uid:user._id});
+        if(myotp){
+            return res.status(OK).json({
+                status: OK,
+                message: "OTP Verification",
+                refData: user._id
+            })
+        }
         
-    //     var otpGen = Math.floor(Math.random() * 10000).toString();
-    //     while(otpGen.length < 4){
-    //         otpGen += '0'
-    //     }
+        var otpGen = Math.floor(Math.random() * 10000).toString();
+        while(otpGen.length < 4){
+            otpGen += '0'
+        }
 
-    //     const isEmailSent = await sendMail(user.email, message, subject)
+        const isEmailSent = await sendMail(user.email, message, subject)
 
-    //     // mailer.send({
-    //     //     to:[
-    //     //         {email:user.email, name:`${user.firstname} ${user.lastname}`}
-    //     //     ],
-    //     //     subject:"Buzz-Whoa! Did You Just Try to Join the BuzzDealz Hive?",
-    //     //     body:mbody.FOTP({otp:otpGen})
-    //     // })
+        // mailer.send({
+        //     to:[
+        //         {email:user.email, name:`${user.firstname} ${user.lastname}`}
+        //     ],
+        //     subject:"Buzz-Whoa! Did You Just Try to Join the BuzzDealz Hive?",
+        //     body:mbody.FOTP({otp:otpGen})
+        // })
 
-    //     const otp = new FPotp();
-    //     otp.uid = user._id;
-    //     otp.otp = otpGen;
-    //     otp.save();
+        const otp = new FPotp();
+        otp.uid = user._id;
+        otp.otp = otpGen;
+        otp.save();
 
-    //    return res.status(OK).json({
-    //         status: OK,
-    //         message: "OTP Verification",
-    //         refData: user._id
-    //     })
-    //    }
-    //    catch(e){
-    //     return res.status(INTERNAL_SERVER_ERROR).json("Something Went Wrong");
-    //    }
+       return res.status(OK).json({
+            status: OK,
+            message: "OTP Verification",
+            refData: user._id
+        })
+       }
+       catch(e){
+        return res.status(INTERNAL_SERVER_ERROR).json("Something Went Wrong");
+       }
 
-    // }
+    }
 
-    // async resetPassword(req,res){
+    async resetPassword(req,res){
 
-    //     const { refId, otp, newPassword,cPassword } = req.body;
+        const { refId, otp, newPassword,cPassword } = req.body;
 
-    //    try{
-    //     if(!refId || !otp){
-    //         return res.status(BAD_REQUEST).json({
-    //             status: BAD_REQUEST,
-    //             message: "refId and otp cannot be null"
-    //         });
-    //     }
+       try{
+        if(!refId || !otp){
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: "refId and otp cannot be null"
+            });
+        }
 
-    //     if(!newPassword || newPassword.length < 8){
-    //         return res.status(BAD_REQUEST).json({
-    //             status: BAD_REQUEST,
-    //             message: "Password length should be minimum of 8 characters"
-    //         });
-    //     }
-    //     if( newPassword != cPassword ){
-    //         return res.status(BAD_REQUEST).json({
-    //             status: BAD_REQUEST,
-    //             message: "Password did not Match"
-    //         });
-    //     }
+        if(!newPassword || newPassword.length < 8){
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: "Password length should be minimum of 8 characters"
+            });
+        }
+        if( newPassword != cPassword ){
+            return res.status(BAD_REQUEST).json({
+                status: BAD_REQUEST,
+                message: "Password did not Match"
+            });
+        }
 
-    //     const veri = await FPotp.findOne({ uid:refId, otp:otp });
-    //     if(!veri){
-    //         return res.status(BAD_REQUEST).json({
-    //             status: NOT_FOUND,
-    //             message: "Incorrect or Expired OTP"
-    //         });
-    //     }
+        const veri = await FPotp.findOne({ uid:refId, otp:otp });
+        if(!veri){
+            return res.status(BAD_REQUEST).json({
+                status: NOT_FOUND,
+                message: "Incorrect or Expired OTP"
+            });
+        }
 
 
-    //     const user = await User.findOne({_id:refId});
-    //     if(user){
+        const user = await User.findOne({_id:refId});
+        if(user){
 
-    //         const salt = bcrypt.genSaltSync(10);
-    //         const hashPass = bcrypt.hashSync(newPassword,salt);
+            const salt = bcrypt.genSaltSync(10);
+            const hashPass = bcrypt.hashSync(newPassword,salt);
 
-    //         user.encrypted_password = hashPass;
-    //         await user.save();
+            user.encrypted_password = hashPass;
+            await user.save();
 
-    //         await FPotp.deleteOne({uid:refId});
+            await FPotp.deleteOne({uid:refId});
 
-    //         return res.status(OK).json({
-    //             status: OK,
-    //             message: "Password Reset Successfully."
-    //         });
+            return res.status(OK).json({
+                status: OK,
+                message: "Password Reset Successfully."
+            });
 
-    //     }
-    //     else{
-    //         return res.status(BAD_REQUEST).json({
-    //             status: NOT_FOUND,
-    //             message: "incorrect refId"
-    //         });
-    //     }
+        }
+        else{
+            return res.status(BAD_REQUEST).json({
+                status: NOT_FOUND,
+                message: "incorrect refId"
+            });
+        }
 
-    //    }
-    //    catch(e){
-    //     return res.status(BAD_REQUEST).json({
-    //         status: BAD_REQUEST,
-    //         message: "Bad RefID"
-    //     });
-    //    }
-    // }
+       }
+       catch(e){
+        return res.status(BAD_REQUEST).json({
+            status: BAD_REQUEST,
+            message: "Bad RefID"
+        });
+       }
+    }
 
 }
 
