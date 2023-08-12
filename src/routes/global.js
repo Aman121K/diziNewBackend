@@ -85,4 +85,6 @@ authRoute.route('/addBanner')
     ]),
     (req, res) => globalController.addBanner (req, res))
 
+authRoute.get('/get-categories', globalController.getCategories)
+
 module.exports = authRoute

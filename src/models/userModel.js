@@ -41,9 +41,16 @@ const userSchema = new mongoose.Schema({
     state: { type: String, trim: true, },
     country: { type: String, trim: true, },
     zipcode: { type: String, trim: true, },
-    location: { type: String, trim: true, },
     pic: { type: String, trim: true },
     fcmToken: { type: String, trim: true },
+    openTime: { type: String, trim: true },
+    closeTime: { type: String, trim: true },
+    lunchTime: { type: String, trim: true },
+    images: [{ type: String, trim: true }], // Store multiple images in an array
+    availableDays: [{ type: String, trim: true }], // Store available days in an array
+    seats: { type: Number }, // You can adjust the type based on your needs
+    barbers: { type: Number }, // You can adjust the type based on your needs
+    location: { type: String, trim: true },
     lastActive:{type:Date, default: () => Date.now() }
 }, { timestamps: true })
 

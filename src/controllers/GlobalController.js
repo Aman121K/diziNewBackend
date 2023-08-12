@@ -7,6 +7,7 @@ cnf();
 
 const User = require("../models/userModel")
 const Banner = require("../models/bannerModel")
+const Category = require("../models/categoryModel")
 const { loggerUtil } = require("../utils/logger")
 
 const buc = require("../utils/Bucket");
@@ -375,7 +376,15 @@ class GlobalController{
                 address,
                 state,
                 country,
-                zipcode
+                zipcode,
+                openTime,
+                closeTime,
+                lunchTime,
+                images,
+                availableDays,
+                seats,
+                barbers,
+                location
             } = req.body;
         
             // Create an object with the fields to update
@@ -389,7 +398,15 @@ class GlobalController{
                 address,
                 state,
                 country,
-                zipcode
+                zipcode,
+                openTime,
+                closeTime,
+                lunchTime,
+                images,
+                availableDays,
+                seats,
+                barbers,
+                location
             };
 
             updatedInfo.accessoryInfo = JSON.parse(accessoryInfo);
@@ -400,6 +417,11 @@ class GlobalController{
 
             if (req.files && req.files.addressProof && req.files.addressProof.length > 0) {
                 updatedInfo.addressProof = req.files.addressProof[0].filename;
+            }
+
+            if (req.files && req.files.images && req.files.images.length > 0) {
+                // updatedInfo.images = req.files.salonLogo[0].filename;
+                updatedInfo.images = req.files.images.map(file => file.filename);
             }
         
             const user = await User.findByIdAndUpdate(
@@ -877,6 +899,20 @@ class GlobalController{
         });
        }
     }
+
+    async getCategories(req,res){
+        try {
+            const categories = await Category.find();
+            res.status(OK).json({
+                status: OK,
+                message: "categories fetched successfully.",
+                data: categories
+            })
+          } catch (error) {
+            console.error("Error fetching categories:", error);
+            res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+          }
+       }
 
 }
 

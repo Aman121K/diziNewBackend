@@ -31,6 +31,7 @@ salonRoute.route('/')
     upload.fields([
       { name: "salonLogo", maxCount: 1 },
       { name: "addressProof", maxCount: 1 },
+      { name: "images", maxCount: 5 },
     ]),
     (req, res) => globalController.updateSalonDetails (req, res))
 .delete(isUser, globalController.deleteSalon)
