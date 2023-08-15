@@ -3,6 +3,7 @@ const mongoose = require("mongoose")
 const adSchema = new mongoose.Schema({
     title: { type: String, trim: true, },
     coverImage: { type: String, trim: true },
+    url: { type: String, trim: true },
     description: { type: String },
 }, { timestamps: true })
 

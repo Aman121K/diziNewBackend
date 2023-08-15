@@ -45,7 +45,7 @@ class AdminController{
 
    async categoryCreate(req,res){
     try {
-        const { title, description, price } = req.body;
+        const { title, description, gender } = req.body;
         const coverImage = req.files.coverImage[0].filename; // Assuming the uploaded file is named "coverImage"
         const existingCategory = await Category.findOne({ title });
         if (existingCategory) {
@@ -55,7 +55,7 @@ class AdminController{
           title,
           coverImage,
           description,
-          price,
+          gender,
         });
     
         const savedCategory = await newCategory.save();
@@ -96,13 +96,14 @@ class AdminController{
 
    async adCreate(req,res){
     try {
-        const { title, description } = req.body;
+        const { title, description, url } = req.body;
         const coverImage = req.files.coverImage[0].filename; // Assuming the uploaded file is named "coverImage"
 
         const newAd = new Ads({
           title,
           coverImage,
           description,
+          url
         });
     
         const savedAd = await newAd.save();
