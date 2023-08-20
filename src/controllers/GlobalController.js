@@ -8,6 +8,9 @@ cnf();
 const User = require("../models/userModel")
 const Banner = require("../models/bannerModel")
 const Category = require("../models/categoryModel")
+const Ads = require("../models/adsModel");
+const Style = require("../models/styleModel");
+const Article = require("../models/articleModel");
 const { loggerUtil } = require("../utils/logger")
 
 const buc = require("../utils/Bucket");
@@ -913,6 +916,76 @@ class GlobalController{
             res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
           }
        }
+
+    async getStyles(req,res){
+    try {
+        const categories = await Style.find();
+        res.status(OK).json({
+            status: OK,
+            message: "styles fetched successfully.",
+            data: categories
+        })
+        } catch (error) {
+        console.error("Error fetching categories:", error);
+        res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+        }
+    }
+
+    async getAds(req,res){
+        try {
+            const categories = await Ads.find();
+            res.status(OK).json({
+                status: OK,
+                message: "styles fetched successfully.",
+                data: categories
+            })
+            } catch (error) {
+            console.error("Error fetching categories:", error);
+            res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+            }
+        }
+
+        async getArticles(req,res){
+            try {
+                const categories = await Article.find();
+                res.status(OK).json({
+                    status: OK,
+                    message: "styles fetched successfully.",
+                    data: categories
+                })
+                } catch (error) {
+                console.error("Error fetching categories:", error);
+                res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+                }
+            }
+
+            async getAllUsers(req,res){
+                try {
+                    const categories = await User.find({role : 1});
+                    res.status(OK).json({
+                        status: OK,
+                        message: "styles fetched successfully.",
+                        data: categories
+                    })
+                    } catch (error) {
+                    console.error("Error fetching categories:", error);
+                    res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+                    }
+                }
+
+                async getAllSalons(req,res){
+                    try {
+                        const categories = await User.find({role : 2});
+                        res.status(OK).json({
+                            status: OK,
+                            message: "styles fetched successfully.",
+                            data: categories
+                        })
+                        } catch (error) {
+                        console.error("Error fetching categories:", error);
+                        res.status(BAD_REQUEST).json({ message: "Error fetching categories" });
+                        }
+                    }
 
 }
 

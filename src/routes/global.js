@@ -87,4 +87,14 @@ authRoute.route('/addBanner')
 
 authRoute.get('/get-categories', globalController.getCategories)
 
+authRoute.get('/get-styles', globalController.getStyles)
+
+authRoute.get('/get-ads', globalController.getAds)
+
+authRoute.get('/get-articles', globalController.getArticles)
+
+authRoute.get('/get-all-users', globalController.getAllUsers)
+
+authRoute.get('/get-all-salons', globalController.getAllSalons)
+
 module.exports = authRoute
