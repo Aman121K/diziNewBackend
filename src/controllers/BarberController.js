@@ -52,6 +52,20 @@ class BarberController{
       }
    }
 
+   async getSalonBarbers(req,res){
+    try {
+        const barbers = await Barber.find({ salon: req.params.barberId });
+        return res.status(OK).json({
+            status: OK,
+            message: "Barber fetched Successfully.",
+            data: barbers
+        });
+      } catch (err) {
+        console.error("Error fetching barbers:", err);
+        res.status(500).json({ error: "Server error" });
+      }
+   }
+
    async update(req,res){
     
    }

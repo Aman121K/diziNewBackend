@@ -11,5 +11,8 @@ barberRoute.route('/')
 .put( isUser , barberController.update)
 .delete( isUser, barberController.delete)
 
+barberRoute.route('/getSalonBarbers/:barberId')
+.get( isUser, barberController.getSalonBarbers)
+
 
 module.exports = barberRoute;

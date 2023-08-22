@@ -97,4 +97,6 @@ authRoute.get('/get-all-users', globalController.getAllUsers)
 
 authRoute.get('/get-all-salons', globalController.getAllSalons)
 
+authRoute.put('/blockUnblock/:userId', globalController.blockUnblockUser)
+
 module.exports = authRoute
